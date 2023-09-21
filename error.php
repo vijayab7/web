@@ -1,5 +1,3 @@
-
-
 <!doctype html>
 <html lang="ja">
 
@@ -25,8 +23,8 @@
   <div class="border rounded bg-white form-login">
     <h1 class="h3 my-3">ERROR</h1>
     <p class="pt-3" style="line: height 2rem;">システムエラーが発生しました。<br> お手数ですがし管理者にお間いあわせ下さい</p>
-    <img class="my-3"src="/img/error.png" alt="ERROR" width="150" height="150">
-</div>
+    <img class="my-3" src="/img/error.png" alt="ERROR" width="150" height="150">
+  </div>
 
   <!-- Optional JavaScript; choose one of the two! -->
 
@@ -38,7 +36,7 @@
     integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
     crossorigin="anonymous"></script>
 
-  
+
 </body>
 
 </html>

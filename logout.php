@@ -1,14 +1,14 @@
 <?php
-try{
-session_start();
+try {
+    session_start();
 
-$_SESSION =array();
+    $_SESSION = array();
 
-session_destroy();
+    session_destroy();
 
-header('Location:/login.php');
-}catch(Exception $e){
+    header('Location:/login.php');
+} catch (Exception $e) {
     header('Location:/error.php');
     exit;
-    }
+}
 ?>

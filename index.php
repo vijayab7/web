@@ -6,7 +6,7 @@ try {
 
     session_start();
 
- 
+
 
     if (!isset($_SESSION['USER'])) {
         redirect('/login.php');
@@ -26,7 +26,7 @@ try {
     $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
     $stmt->execute();
     $work = $stmt->fetch();
-    if(!$work){
+    if (!$work) {
         $modal_view_flg = TRUE;
     }
 
@@ -128,7 +128,7 @@ try {
     }
 
     if (isset($_GET['m'])) {
-        
+
         $yyyymm = $_GET['m'];
         $day_count = date('t', strtotime($yyyymm));
         if (count(explode('-', $yyyymm)) != 2) {
@@ -172,22 +172,21 @@ try {
     <form class="border rounded bg-white form-time-table" action=index.php>
         <h1 class="h3 my-3">月別リスト</h1>
         <div class="float-left">
-        <select class="form-control rounded-pill mb-3" name="m" onchange="submit(this.form)">
-            <option value="<?= date('Y-m') ?>">
-                <?= date('Y/m') ?>
-            </option>
-            <?php for ($i = 1; $i < 12; $i++): ?>
-                <?php $target_yyyymm = strtotime("-{$i}months"); ?>
-                <option value="<?= date('Y-m', $target_yyyymm) ?>" <?php if ($yyyymm == date('Y-m', $target_yyyymm))
-                       echo 'selected' ?>>
-                    <?= date('Y/m', $target_yyyymm) ?>
+            <select class="form-control rounded-pill mb-3" name="m" onchange="submit(this.form)">
+                <option value="<?= date('Y-m') ?>">
+                    <?= date('Y/m') ?>
                 </option>
-            <?php endfor; ?>
-        </select>
+                <?php for ($i = 1; $i < 12; $i++): ?>
+                    <?php $target_yyyymm = strtotime("-{$i}months"); ?>
+                    <option value="<?= date('Y-m', $target_yyyymm) ?>" <?php if ($yyyymm == date('Y-m', $target_yyyymm))
+                           echo 'selected' ?>>
+                        <?= date('Y/m', $target_yyyymm) ?>
+                    </option>
+                <?php endfor; ?>
+            </select>
         </div>
         <div class="float-right">
-            <a href="logout.php"><button type="button"
-                    class="btn btn-primary rounded-pill px-5">ログアウト</button></a>
+            <a href="logout.php"><button type="button" class="btn btn-primary rounded-pill px-5">ログアウト</button></a>
         </div>
         <table class="table table-bordered">
             <thead>
