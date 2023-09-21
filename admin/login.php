@@ -1,6 +1,7 @@
 <?php
  require_once(dirname(__FILE__).'/../config/config.php');
  require_once(dirname(__FILE__).'/../function.php');
+ try{
  session_start();
 
  if(isset($_SESSION['USER']) && $_SESSION['USER']['auth_type'] == 1){
@@ -53,6 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   $user_no = "";
   $password = "";
 }
+}catch(Exception $e){
+  header('Location:/error.php');
+  exit;
+  }
 ?>
 <!doctype html>
 <html lang="ja">

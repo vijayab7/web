@@ -1,6 +1,9 @@
 <?php
 require_once(dirname(__FILE__) . '/config/config.php');
 require_once(dirname(__FILE__) . '/function.php');
+
+try{
+
 session_start();
 
 if (!isset($_SESSION['USER'])) {
@@ -13,11 +16,14 @@ $pdo = connect_db();
 
 $err = array();
 
-$modal_view_flg = TRUE;
+$target_date = date('Y-m-d');
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+   
+       $modal_view_flg = TRUE;
     
     if($_POST['target_date']){
+
         $target_date = $_POST['target_date'];
     }else{
         $target_date = date('Y-m-d');
@@ -26,26 +32,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $modal_end_time = $_POST['modal_end_time'];
     $modal_break_time = $_POST['modal_break_time'];
     $modal_comment = $_POST['modal_comment'];
-
+   
     if (!$modal_start_time) {
         $err['modal_start_time'] = '出勤を入力してください。';
-      }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_start_time)){
+    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_start_time)){
         $err['modal_start_time'] = '出勤を正しく入力してください。';
-
-      }
-      if(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_end_time)){
+    }
+    if (!$modal_end_time) {
+        $err['modal_end_time'] = '退勤を入力してください。';
+    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_end_time)){
         $err['modal_end_time'] = '退勤を正しく入力してください。';
-
-      }
-      if(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_break_time)){
-        $err['modal_break_time'] = '休憩を正しく入力してください。';
-
-      }
-      if(mb_strlen($modal_comment,'utf-8') >2000){
+    }
+    if (!$modal_break_time) {
+            $err['modal_break_time'] = '休憩を入力してください。';
+    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_break_time)){
+            $err['modal_break_time'] = '休憩を正しく入力してください。';
+    }
+    if(mb_strlen($modal_comment,'utf-8') >100){
         $err['modal_comment'] = '業務内容が長すぎます。';
-      }
+    }
 
-    if(empty($err)){
+     if(empty($err)){
     $sql = "SELECT id from work where user_id=:user_id AND date = :date LIMIT 1";
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':user_id', (int) $session_user['id'], PDO::PARAM_INT);
@@ -75,15 +82,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bindValue(':end_time', $modal_end_time, PDO::PARAM_STR);
         $stmt->bindValue(':break_time', $modal_break_time, PDO::PARAM_STR);
         $stmt->bindValue(':comment', $modal_comment, PDO::PARAM_STR);
-
+      
         $stmt->execute();
         $work = $stmt->fetch();
         
     }
     $modal_view_flg = FALSE;
-
     }
-}else{
+       
+ }
+ else{
+ 
     $sql = "SELECT date,id,start_time,end_time,break_time,comment from work where user_id=:user_id AND date = :date LIMIT 1";
 
     $stmt = $pdo->prepare($sql);
@@ -92,8 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->execute();
     $today_work = $stmt->fetch();
       
-    
-    
+
+   
     if ($today_work) {
         $modal_start_time = $today_work['start_time'];
         $modal_end_time = $today_work['end_time'];
@@ -110,12 +119,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $modal_break_time = '01:00';
         $modal_comment = '';
     }
-}
+ }
 
 if (isset($_GET['m'])) {
     $yyyymm = $_GET['m'];
     $day_count = date('t', strtotime($yyyymm));
+    if(count(explode('-',$yyyymm))!=2){
+        throw new Exception('日付の指定が不正',500);
+    }
+$check_date = new DateTime($yyyymm.'-01');
+$start_date = new DateTime('first day of -11 month 00:00');
+$end_date = new DateTime('first day of this month 00:00');
 
+if($check_date < $start_date || $end_date < $check_date){
+    throw new Exception('日付の範囲が不正',500);
+}
+if($check_date != $end_date){
+    $modal_view_flg =False;
+}
 } else {
     $yyyymm = date('Y-m');
     $day_count = date('t');
@@ -129,7 +150,10 @@ $stmt->bindValue(':user_id', (int) $session_user['id'], PDO::PARAM_INT);
 $stmt->bindValue(':date', $yyyymm, PDO::PARAM_STR);
 $stmt->execute();
 $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
-
+}catch(Exception $e){
+header('Location:/error.php');
+exit;
+}
 
 ?>
 
@@ -241,39 +265,49 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
                     <div class="modal-body">
                         <div class="container">
                             <div class="alert alert-primary" role="alert">
-                                <?= date('n',strtotime($yyyymm)) ?> /<span id="modal_day"> <?= time_format_dw(date('Y-m-d')) ?></span>
+                                <?= date('n',strtotime($target_date)) ?> /<span id="modal_day"> <?= time_format_dw($target_date) ?></span>
                             </div>
                             <div class="row">
                                 <div class="col-sm">
                                     <div class="input-group">
-                                        <input type="text" class="form-control<?php if (isset($err['modal_start_time'])) echo 'is-invalid'; ?>" placeholder="出勤" id="modal_start_time"
+                                        <input type="text" class="form-control <?php if (isset($err['modal_start_time']))
+                                        echo 'is-invalid'; ?> " placeholder="出勤" id="modal_start_time"
                                             name="modal_start_time" value="<?= format_time($modal_start_time) ?>">
                                         <div class="input-group-prepend">
                                             <button type="button" class="input-group-text" id="start_btn">打刻</button>
                                         </div>
                                         <div class="invalid-feedback"><?= $err['modal_start_time'] ?></div>
+                                    </div>
                                 </div>
                                 <div class="col-sm">
                                     <div class="input-group">
-                                        <input type="text" class="form-control<?php if (isset($err['modal_end_time']))echo 'is-invalid'; ?>" placeholder="退勤" id="modal_end_time"
+                                        <input type="text" class="form-control <?php if (isset($err['modal_end_time']))
+                                        echo 'is-invalid'; ?> " placeholder="退勤" id="modal_end_time"
                                             name="modal_end_time" value="<?= format_time($modal_end_time) ?>">
                                         <div class="input-group-prepend">
                                             <button type="button" class="input-group-text" id="end_btn">打刻</button>
                                         </div>
                                         <div class="invalid-feedback"><?= $err['modal_end_time'] ?></div>
+
+                                    </div>
                                 </div>
                                 <div class="col-sm">
                                     <div class="input-group">
-                                        <input type="text" class="form-control<?php if (isset($err['modal_break_time']))echo 'is-invalid'; ?>" placeholder="休憩" name="modal_break_time" id="modal_break_time"
+                                        <input type="text" class="form-control <?php if (isset($err['modal_break_time']))
+                                        echo 'is-invalid'; ?> " placeholder="休憩" name="modal_break_time" id="modal_break_time"
                                             value="<?= format_time($modal_break_time) ?>">
                                             <div class="invalid-feedback"><?= $err['modal_break_time'] ?></div>
-                                        </div>
+
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group pt-3">
-                                <textarea class="form-control<?php if (isset($err['modal_comment']))echo 'is-invalid'; ?>" name="modal_comment"   id="modal_comment" rows="5"
+                                <textarea class="form-control <?php if (isset($err['modal_comment']))
+                                        echo 'is-invalid'; ?> " name="modal_comment"   id="modal_comment" rows="5"
                                     placeholder="業務内容"><?= $modal_comment ?></textarea>
                                     <div class="invalid-feedback"><?= $err['modal_comment'] ?></div>
 
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -330,10 +364,10 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
             $('#modal_comment').val(comment)
             $('#target_date').val(target_day)
 
-            $('#modal_start_time').removeClass('is-invalid')
-            $('#modal_end_time').removeClass('is-invalid')
-            $('#modal_break_time').removeClass('is-invalid')
-            $('#modal_comment').removeClass('is-invalid')
+             $('#modal_start_time').removeClass('is-invalid')
+             $('#modal_end_time').removeClass('is-invalid')
+             $('#modal_break_time').removeClass('is-invalid')
+             $('#modal_comment').removeClass('is-invalid')
         })
     </script>
 

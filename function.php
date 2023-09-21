@@ -26,7 +26,7 @@ function format_time($timeString) {
         $minute = (int)$timeComponents[1];
         return sprintf("%02d:%02d", $hour, $minute);
     } else {
-        return "00:00";
+        return "";
     }
 }
 ?>

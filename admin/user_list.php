@@ -1,6 +1,7 @@
 <?php
  require_once(dirname(__FILE__).'/../config/config.php');
  require_once(dirname(__FILE__).'/../function.php');
+ try{
  session_start();
 
  if(!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1){
@@ -13,6 +14,10 @@
     $sql = "SELECT * from user where auth_type = '0'";
     $stmt = $pdo->query($sql);
     $user_list = $stmt->fetchAll();
+}catch(Exception $e){
+    header('Location:/error.php');
+    exit;
+    }
 ?>
 <!doctype html>
 <html lang="ja">
