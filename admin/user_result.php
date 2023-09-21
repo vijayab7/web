@@ -1,134 +1,133 @@
 <?php
 require_once(dirname(__FILE__) . '/../config/config.php');
 require_once(dirname(__FILE__) . '/../function.php');
-try{
-session_start();
+try {
+    session_start();
 
-if(!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1){
-    header('Location:/admin/login.php');
-    exit;
-   }
-$user_id = $_REQUEST['id'];
+    if (!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1) {
+        header('Location:/admin/login.php');
+        exit;
+    }
+    $user_id = $_REQUEST['id'];
 
-if(!$user_id){
-    throw new Exception('ユーザーIDが不正',500);
-}
+    if (!$user_id) {
+        throw new Exception('ユーザーIDが不正', 500);
+    }
 
-$pdo = connect_db();
+    $pdo = connect_db();
 
-$err = array();
+    $err = array();
 
-$target_date = date('Y-m-d');
+    $target_date = date('Y-m-d');
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    var_dump($_POST['target_date']);
-    exit;
-    if($_POST['target_date']){
-        $target_date = $_POST['target_date'];
-    }else{
-        $target_date = date('Y-m-d');
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+        if ($_POST['target_date']) {
+            $target_date = $_POST['target_date'];
+        } else {
+            $target_date = date('Y-m-d');
         }
-    $modal_start_time = $_POST['modal_start_time'];
-    $modal_end_time = $_POST['modal_end_time'];
-    $modal_break_time = $_POST['modal_break_time'];
-    $modal_comment = $_POST['modal_comment'];
+        $modal_start_time = $_POST['modal_start_time'];
+        $modal_end_time = $_POST['modal_end_time'];
+        $modal_break_time = $_POST['modal_break_time'];
+        $modal_comment = $_POST['modal_comment'];
 
-    if (!$modal_start_time) {
-        $err['modal_start_time'] = '出勤を入力してください。';
-    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_start_time)){
-        $err['modal_start_time'] = '出勤を正しく入力してください。';
-    }
-    if (!$modal_end_time) {
-        $err['modal_end_time'] = '退勤を入力してください。';
-    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_end_time)){
-        $err['modal_end_time'] = '退勤を正しく入力してください。';
-    }
-    if (!$modal_break_time) {
+        if (!$modal_start_time) {
+            $err['modal_start_time'] = '出勤を入力してください。';
+        } elseif (!check_time_format($modal_start_time)) {
+            $err['modal_start_time'] = '出勤を正しく入力してください。';
+        }
+        if (!$modal_end_time) {
+            $err['modal_end_time'] = '退勤を入力してください。';
+        } elseif (!check_time_format($modal_end_time)) {
+            $err['modal_end_time'] = '退勤を正しく入力してください。';
+        }
+        if (!$modal_break_time) {
             $err['modal_break_time'] = '休憩を入力してください。';
-    }elseif(!preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$modal_break_time)){
+        } elseif (check_time_format($modal_break_time)) {
             $err['modal_break_time'] = '休憩を正しく入力してください。';
-    }
-    if(mb_strlen($modal_comment,'utf-8') >100){
-        $err['modal_comment'] = '業務内容が長すぎます。';
+        }
+        if (mb_strlen($modal_comment, 'utf-8') > 100) {
+            $err['modal_comment'] = '業務内容が長すぎます。';
+        }
+
+        if (empty($err)) {
+
+            $sql = "SELECT id from work where user_id=:user_id AND date = :date LIMIT 1";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':user_id', (int) $user_id, PDO::PARAM_INT);
+            $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
+            $stmt->execute();
+            $work = $stmt->fetch();
+
+            if ($work) {
+                $sql = "UPDATE work SET start_time = :start_time, end_time = :end_time,break_time = :break_time,comment = :comment where id=:id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->bindValue(':id', (int) $work['id'], PDO::PARAM_INT);
+                $stmt->bindValue(':start_time', $modal_start_time, PDO::PARAM_STR);
+                $stmt->bindValue(':end_time', $modal_end_time, PDO::PARAM_STR);
+                $stmt->bindValue(':break_time', $modal_break_time, PDO::PARAM_STR);
+                $stmt->bindValue(':comment', $modal_comment, PDO::PARAM_STR);
+
+                $stmt->execute();
+                $work = $stmt->fetch();
+            } else {
+
+                $sql = "INSERT INTO work (user_id,date,start_time,end_time,break_time,comment)
+        values(:user_id,:date,:start_time,:end_time,:break_time,:comment)";
+                $stmt = $pdo->prepare($sql);
+                $stmt->bindValue(':user_id', (int) $user_id, PDO::PARAM_INT);
+                $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
+                $stmt->bindValue(':start_time', $modal_start_time, PDO::PARAM_STR);
+                $stmt->bindValue(':end_time', $modal_end_time, PDO::PARAM_STR);
+                $stmt->bindValue(':break_time', $modal_break_time, PDO::PARAM_STR);
+                $stmt->bindValue(':comment', $modal_comment, PDO::PARAM_STR);
+
+                $stmt->execute();
+                $work = $stmt->fetch();
+
+            }
+        }
+    } else {
+        $modal_start_time = '';
+        $modal_end_time = '';
+        $modal_break_time = '01:00';
+        $modal_comment = '';
     }
 
-     if(empty($err)){
+    if (isset($_GET['m'])) {
+        $yyyymm = $_GET['m'];
+        $day_count = date('t', strtotime($yyyymm));
+        if (count(explode('-', $yyyymm)) != 2) {
+            throw new Exception('日付の指定が不正', 500);
+        }
+        $check_date = new DateTime($yyyymm . '-01');
+        $start_date = new DateTime('first day of -11 month 00:00');
+        $end_date = new DateTime('first day of this month 00:00');
 
-    $sql = "SELECT id from work where user_id=:user_id AND date = :date LIMIT 1";
+        if ($check_date < $start_date || $end_date < $check_date) {
+            throw new Exception('日付の範囲が不正', 500);
+        }
+
+    } else {
+        $yyyymm = date('Y-m');
+        $day_count = date('t');
+
+    }
+
+
+    $sql = "SELECT date,id,start_time,end_time,break_time,comment from work where user_id= :user_id AND DATE_FORMAT(date,'%Y-%m') = :date";
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':user_id', (int) $user_id, PDO::PARAM_INT);
-    $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
+    $stmt->bindValue(':date', $yyyymm, PDO::PARAM_STR);
     $stmt->execute();
-    $work = $stmt->fetch();
-   
-    if ($work) {
-        $sql = "UPDATE work SET start_time = :start_time, end_time = :end_time,break_time = :break_time,comment = :comment where id=:id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':id', (int) $work['id'], PDO::PARAM_INT);
-        $stmt->bindValue(':start_time', $modal_start_time, PDO::PARAM_STR);
-        $stmt->bindValue(':end_time', $modal_end_time, PDO::PARAM_STR);
-        $stmt->bindValue(':break_time', $modal_break_time, PDO::PARAM_STR);
-        $stmt->bindValue(':comment', $modal_comment, PDO::PARAM_STR);
+    $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 
-        $stmt->execute();
-        $work = $stmt->fetch();
-    } else {
-        
-        $sql = "INSERT INTO work (user_id,date,start_time,end_time,break_time,comment)
-        values(:user_id,:date,:start_time,:end_time,:break_time,:comment)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':user_id', (int) $user_id, PDO::PARAM_INT);
-        $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
-        $stmt->bindValue(':start_time', $modal_start_time, PDO::PARAM_STR);
-        $stmt->bindValue(':end_time', $modal_end_time, PDO::PARAM_STR);
-        $stmt->bindValue(':break_time', $modal_break_time, PDO::PARAM_STR);
-        $stmt->bindValue(':comment', $modal_comment, PDO::PARAM_STR);
-
-        $stmt->execute();
-        $work = $stmt->fetch();
-        
-    }
-    }
-}else{
-    $modal_start_time = '';
-    $modal_end_time = '';
-    $modal_break_time = '01:00';
-    $modal_comment = '';
-}
-
-if (isset($_GET['m'])) {
-    $yyyymm = $_GET['m'];
-    $day_count = date('t', strtotime($yyyymm));
-    if(count(explode('-',$yyyymm))!=2){
-        throw new Exception('日付の指定が不正',500);
-    }
-    $check_date = new DateTime($yyyymm.'-01');
-$start_date = new DateTime('first day of -11 month 00:00');
-$end_date = new DateTime('first day of this month 00:00');
-
-if($check_date < $start_date || $end_date < $check_date){
-    throw new Exception('日付の範囲が不正',500);
-}
-
-} else {
-    $yyyymm = date('Y-m');
-    $day_count = date('t');
-
-}
-
-
-$sql = "SELECT date,id,start_time,end_time,break_time,comment from work where user_id= :user_id AND DATE_FORMAT(date,'%Y-%m') = :date";
-$stmt = $pdo->prepare($sql);
-$stmt->bindValue(':user_id', (int)$user_id, PDO::PARAM_INT);
-$stmt->bindValue(':date', $yyyymm, PDO::PARAM_STR);
-$stmt->execute();
-$work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
-
-}catch(Exception $e){
+} catch (Exception $e) {
     header('Location:/error.php');
     exit;
-    }
-  
+}
+
 ?>
 
 <!doctype html>
@@ -153,22 +152,27 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
     <div>
         <img class="mb-4" src="../img/logo.svg" width="80" height="80">
     </div>
-    <form class="border rounded bg-white form-time-table" action=index.php>
+    <form class="border rounded bg-white form-time-table" action=user_result.php>
         <h1 class="h3 my-3">月別リスト</h1>
 
         <div class="float-left">
-        <select class="form-control rounded-pill mb-3" name="m" onchange="submit(this.form)">
-            <option value="<?= date('Y-m') ?>"><?= date('Y/m') ?></option>
-            <?php for ($i = 1; $i < 12; $i++): ?>
-                <?php $target_yyyymm = strtotime("-{$i}months"); ?>
-                <option value="<?= date('Y-m', $target_yyyymm) ?>" <?php if ($yyyymm == date('Y-m', $target_yyyymm))
-                     echo 'selected' ?>><?= date('Y/m', $target_yyyymm) ?></option>
-            <?php endfor; ?>
-        </select>
-            </div>
-            <div class="float-right">
-                <a href="/admin/user_list.php"><button type="button" class="btn btn-secondary rounded-pill px-5">社員一覧に戻る</button></a>
-            </div>
+            <select class="form-control rounded-pill mb-3" name="m" onchange="submit(this.form)">
+                <option value="<?= date('Y-m') ?>">
+                    <?= date('Y/m') ?>
+                </option>
+                <?php for ($i = 1; $i < 12; $i++): ?>
+                    <?php $target_yyyymm = strtotime("-{$i}months"); ?>
+                    <option value="<?= date('Y-m', $target_yyyymm) ?>" <?php if ($yyyymm == date('Y-m', $target_yyyymm))
+                           echo 'selected' ?>>
+                        <?= date('Y/m', $target_yyyymm) ?>
+                    </option>
+                <?php endfor; ?>
+            </select>
+        </div>
+        <div class="float-right">
+            <a href="/admin/user_list.php"><button type="button"
+                    class="btn btn-secondary rounded-pill px-5">社員一覧に戻る</button></a>
+        </div>
         <table class="table table-bordered">
             <thead>
                 <tr class="bg-light">
@@ -219,10 +223,11 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
                             <?= $break_time ?>
                         </td>
                         <td>
-                            <?= $comment ?>
+                            <?= h($comment) ?>
                         </td>
-                        <td><button type="button" class="btn btn-default h-auto py-0" data-toggle="modal" data-target="#inputModal" 
-                        data-day="<?= $yyyymm . '-' .sprintf('%02d', $i)  ?>"><img class="mb-4" src="../img/pencil_686119.png" width="20" height="20"></button></td>
+                        <td><button type="button" class="btn btn-default h-auto py-0" data-toggle="modal"
+                                data-target="#inputModal" data-day="<?= $yyyymm . '-' . sprintf('%02d', $i) ?>"><img
+                                    class="mb-4" src="../img/pencil_686119.png" width="20" height="20"></button></td>
                     </tr>
                 <?php endfor; ?>
             </tbody>
@@ -245,47 +250,57 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
                     <div class="modal-body">
                         <div class="container">
                             <div class="alert alert-primary" role="alert">
-                                <?= date('n',strtotime($target_date)) ?> /<span id="modal_day"> <?= time_format_dw($target_date) ?></span>
+                                <?= date('n', strtotime($target_date)) ?> /<span id="modal_day">
+                                    <?= time_format_dw($target_date) ?>
+                                </span>
                             </div>
                             <div class="row">
                                 <div class="col-sm">
                                     <div class="input-group">
                                         <input type="text" class="form-control <?php if (isset($err['modal_start_time']))
-                                        echo 'is-invalid'; ?> " placeholder="出勤" id="modal_start_time"
+                                            echo 'is-invalid'; ?> " placeholder="出勤" id="modal_start_time"
                                             name="modal_start_time" value="<?= format_time($modal_start_time) ?>">
                                         <div class="input-group-prepend">
                                             <button type="button" class="input-group-text" id="start_btn">打刻</button>
                                         </div>
-                                        <div class="invalid-feedback"><?= $err['modal_start_time'] ?></div>
+                                        <div class="invalid-feedback">
+                                            <?= $err['modal_start_time'] ?>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-sm">
                                     <div class="input-group">
                                         <input type="text" class="form-control <?php if (isset($err['modal_end_time']))
-                                        echo 'is-invalid'; ?> " placeholder="退勤" id="modal_end_time"
+                                            echo 'is-invalid'; ?> " placeholder="退勤" id="modal_end_time"
                                             name="modal_end_time" value="<?= format_time($modal_end_time) ?>">
                                         <div class="input-group-prepend">
                                             <button type="button" class="input-group-text" id="end_btn">打刻</button>
                                         </div>
-                                        <div class="invalid-feedback"><?= $err['modal_end_time'] ?></div>
+                                        <div class="invalid-feedback">
+                                            <?= $err['modal_end_time'] ?>
+                                        </div>
 
                                     </div>
                                 </div>
                                 <div class="col-sm">
                                     <div class="input-group">
                                         <input type="text" class="form-control <?php if (isset($err['modal_break_time']))
-                                        echo 'is-invalid'; ?> " placeholder="休憩" name="modal_break_time" id="modal_break_time"
-                                            value="<?= format_time($modal_break_time) ?>">
-                                            <div class="invalid-feedback"><?= $err['modal_break_time'] ?></div>
+                                            echo 'is-invalid'; ?> " placeholder="休憩" name="modal_break_time"
+                                            id="modal_break_time" value="<?= format_time($modal_break_time) ?>">
+                                        <div class="invalid-feedback">
+                                            <?= $err['modal_break_time'] ?>
+                                        </div>
 
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group pt-3">
                                 <textarea class="form-control <?php if (isset($err['modal_comment']))
-                                        echo 'is-invalid'; ?> " name="modal_comment"   id="modal_comment" rows="5"
+                                    echo 'is-invalid'; ?> " name="modal_comment" id="modal_comment" rows="5"
                                     placeholder="業務内容"><?= $modal_comment ?></textarea>
-                                    <div class="invalid-feedback"><?= $err['modal_comment'] ?></div>
+                                <div class="invalid-feedback">
+                                    <?= $err['modal_comment'] ?>
+                                </div>
 
                             </div>
                         </div>
@@ -328,15 +343,15 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
             $('#modal_end_time').val(hour + ':' + minute)
         })
 
-        $('#inputModal').on('show.bs.modal',function(event){
-            var button =$(event.relatedTarget)
-            var target_day =button.data('day')
+        $('#inputModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget)
+            var target_day = button.data('day')
 
-            var day= button.closest('tr').children('th')[0].innerText
-            var start_time= button.closest('tr').children('td')[0].innerText
-            var end_time= button.closest('tr').children('td')[1].innerText
-            var break_time= button.closest('tr').children('td')[2].innerText
-            var comment= button.closest('tr').children('td')[3].innerText
+            var day = button.closest('tr').children('th')[0].innerText
+            var start_time = button.closest('tr').children('td')[0].innerText
+            var end_time = button.closest('tr').children('td')[1].innerText
+            var break_time = button.closest('tr').children('td')[2].innerText
+            var comment = button.closest('tr').children('td')[3].innerText
 
             $('#modal_day').text(day)
             $('#modal_start_time').val(start_time)
@@ -346,9 +361,9 @@ $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
             $('#target_date').val(target_day)
 
             $('#modal_start_time').removeClass('is-invalid')
-             $('#modal_end_time').removeClass('is-invalid')
-             $('#modal_break_time').removeClass('is-invalid')
-             $('#modal_comment').removeClass('is-invalid')
+            $('#modal_end_time').removeClass('is-invalid')
+            $('#modal_break_time').removeClass('is-invalid')
+            $('#modal_comment').removeClass('is-invalid')
         })
     </script>
 

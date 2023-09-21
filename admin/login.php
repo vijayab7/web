@@ -11,6 +11,7 @@
 $err = array();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  check_token();
   //入力値を取得
   $user_no = $_POST['user_no'];
   $password = $_POST['password'];
@@ -29,15 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if(empty($err)){
     $pdo = connect_db();
 
-    $sql = "SELECT id,user_no,name,auth_type from user where user_no=:user_no AND password = :password AND auth_type = 1 LIMIT 1";
+    $sql = "SELECT * from user where user_no=:user_no AND auth_type = 1 LIMIT 1";
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':user_no',$user_no,PDO::PARAM_STR);
-    $stmt->bindValue(':password',$password,PDO::PARAM_STR);
     $stmt->execute();
     $user = $stmt->fetch();
     // var_dump($user);
     // exit;
-  if($user){
+    if($user && password_verify($password,$user['password'])){
     $_SESSION['USER'] =$user;
     header('Location:/admin/user_list.php');
   exit;
@@ -53,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   $user_no = "";
   $password = "";
+  set_token();
+
 }
 }catch(Exception $e){
   header('Location:/error.php');
@@ -100,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       </div>
     </div>
     <button type="submit" class="btn btn-info text-white rounded-pill px-5 my-4">ログイン</button>
+    <input type="hidden" name="CSRF_TOKEN" value="<?= $_SESSION['CSRF_TOKEN']?>">
+
   </form>
 
   <!-- Optional JavaScript; choose one of the two! -->
