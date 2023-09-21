@@ -1,38 +1,42 @@
 <?php
-function connect_db(){
-    $param = 'mysql:dbname='.DB_NAME.';host='.DB_HOST;
-    $pdo = new PDO($param,DB_USER,DB_PASSWORD);
+function connect_db()
+{
+    $param = 'mysql:dbname=' . DB_NAME . ';host=' . DB_HOST;
+    $pdo = new PDO($param, DB_USER, DB_PASSWORD);
     $pdo->query('SET NAMES utf8;');
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE,PDO::FETCH_ASSOC);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     return $pdo;
 }
 
-function time_format_dw($date){
+function time_format_dw($date)
+{
     $format_date = NULL;
-    $week = array('日','月','火','水','木','金','土');
+    $week = array('日', '月', '火', '水', '木', '金', '土');
 
-    if($date){
-        $format_date = date('j('.$week[date('w',strtotime($date))].')',strtotime($date));
+    if ($date) {
+        $format_date = date('j(' . $week[date('w', strtotime($date))] . ')', strtotime($date));
     }
 
     return $format_date;
 }
 
-function format_time($timeString) {
+function format_time($timeString)
+{
     $timeComponents = explode(':', $timeString);
 
     if (count($timeComponents) >= 2) {
-        $hour = (int)$timeComponents[0];
-        $minute = (int)$timeComponents[1];
+        $hour = (int) $timeComponents[0];
+        $minute = (int) $timeComponents[1];
         return sprintf("%02d:%02d", $hour, $minute);
     } else {
         return "";
     }
 }
 
-function encryptWithFixedKey($plaintext) {
+function encryptWithFixedKey($plaintext)
+{
     $key = 'ThisIsAStrongSecretKey123!'; // Replace with your actual secret key
-    $iv = 'ndomIV1234567890';   // Replace with your actual IV value
+    $iv = 'ndomIV1234567890'; // Replace with your actual IV value
 
     $cipher = "aes-256-cbc";
     $ciphertext = openssl_encrypt($plaintext, $cipher, $key, OPENSSL_RAW_DATA, $iv);
@@ -40,43 +44,49 @@ function encryptWithFixedKey($plaintext) {
 }
 
 
-function decryptWithFixedKey($ciphertext) {
+function decryptWithFixedKey($ciphertext)
+{
     $key = 'ThisIsAStrongSecretKey123!'; // Replace with your actual secret key
-    $iv = 'ndomIV1234567890';   // Replace with your actual IV value
+    $iv = 'ndomIV1234567890'; // Replace with your actual IV value
 
     $cipher = "aes-256-cbc";
     $plaintext = openssl_decrypt(base64_decode($ciphertext), $cipher, $key, OPENSSL_RAW_DATA, $iv);
     return $plaintext;
 }
-function h($orginal_str){
-    return htmlspecialchars($orginal_str,ENT_QUOTES,'UTF-8');
+function h($orginal_str)
+{
+    return htmlspecialchars($orginal_str, ENT_QUOTES, 'UTF-8');
 
 }
 
-function set_token(){
-    $token =sha1(uniqid(mt_rand(),true));
-    $_SESSION['CSRF_TOKEN'] =$token;
+function set_token()
+{
+    $token = sha1(uniqid(mt_rand(), true));
+    $_SESSION['CSRF_TOKEN'] = $token;
 
 }
-function check_token(){
-    if(empty($_SESSION['CSRF_TOKEN']) || ($_SESSION['CSRF_TOKEN'] != $_POST['CSRF_TOKEN'])){
+function check_token()
+{
+    if (empty($_SESSION['CSRF_TOKEN']) || ($_SESSION['CSRF_TOKEN'] != $_POST['CSRF_TOKEN'])) {
         unset($pdo);
         header('Location:/error.php');
         exit;
     }
 }
 
-function check_time_format($time){
-   if (preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$time)){
-    return true;
-   }else{
-    return false;
-   }
+function check_time_format($time)
+{
+    if (preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/', $time)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
-function redirect($path){
+function redirect($path)
+{
     unset($pdo);
-    header('Location:'.$path);
+    header('Location:' . $path);
     exit;
 }
 

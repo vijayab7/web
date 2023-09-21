@@ -1,63 +1,63 @@
 <?php
- require_once(dirname(__FILE__).'/config/config.php');
- require_once(dirname(__FILE__).'/function.php');
- try{
- session_start();
+require_once(dirname(__FILE__) . '/config/config.php');
+require_once(dirname(__FILE__) . '/function.php');
+try {
+  session_start();
 
- if(isset($_SESSION['USER'])){
-  header('Location:/index.php');
-  exit;
- }
-$err = array();
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-  check_token();
-  //入力値を取得
-  $user_no = $_POST['user_no'];
-  $password = $_POST['password'];
-
-  if (!$user_no) {
-    $err['user_no'] = '社員番号を入力してください。';
-  }elseif(!preg_match('/^[0-9]+$/',$user_no)){
-    $err['user_no'] = '社員番号を正しく入力してください。';
-  }elseif(mb_strlen($user_no,'utf-8') >20){
-    $err['user_no'] = '社員番号が長すぎます。';
-  }
-
-  if (!$password) {
-    $err['password'] = 'パスワードを入力してください。';
-  }
-  if(empty($err)){
-    $pdo = connect_db();
-
-    $sql = "SELECT * from user where user_no=:user_no LIMIT 1";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':user_no',$user_no,PDO::PARAM_STR);
-    $stmt->execute();
-    $user = $stmt->fetch();
-  if($user && password_verify($password,$user['password'])){
-    $_SESSION['USER'] =$user;
+  if (isset($_SESSION['USER'])) {
     header('Location:/index.php');
-  exit;
-   
-  }else{
-    $err['password'] = '認証に失敗しました。';
+    exit;
   }
+  $err = array();
 
+  if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+    check_token();
+    //入力値を取得
+    $user_no = $_POST['user_no'];
+    $password = $_POST['password'];
+
+    if (!$user_no) {
+      $err['user_no'] = '社員番号を入力してください。';
+    } elseif (!preg_match('/^[0-9]+$/', $user_no)) {
+      $err['user_no'] = '社員番号を正しく入力してください。';
+    } elseif (mb_strlen($user_no, 'utf-8') > 20) {
+      $err['user_no'] = '社員番号が長すぎます。';
+    }
+
+    if (!$password) {
+      $err['password'] = 'パスワードを入力してください。';
+    }
+    if (empty($err)) {
+      $pdo = connect_db();
+
+      $sql = "SELECT * from user where user_no=:user_no LIMIT 1";
+      $stmt = $pdo->prepare($sql);
+      $stmt->bindValue(':user_no', $user_no, PDO::PARAM_STR);
+      $stmt->execute();
+      $user = $stmt->fetch();
+      if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['USER'] = $user;
+        header('Location:/index.php');
+        exit;
+
+      } else {
+        $err['password'] = '認証に失敗しました。';
+      }
+
+    }
+
+  } else {
+
+    $user_no = "";
+    $password = "";
+
+    set_token();
   }
-
-} else {
-
-  $user_no = "";
-  $password = "";
-
-  set_token();
-}
-}catch(Exception $e){
+} catch (Exception $e) {
   header('Location:/error.php');
   exit;
-  }
+}
 ?>
 <!doctype html>
 <html lang="ja">
@@ -85,22 +85,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <h1 class="h3 my-3">Login</h1>
     <div class="form-group pt-3">
       <input type="text" class="form-control rounded-pill <?php if (isset($err['user_no']))
-        echo 'is-invalid'; ?>"
-        name="user_no" value="<?= $user_no ?>" placeholder="社員番号" required>
+        echo 'is-invalid'; ?>" name="user_no" value="<?= $user_no ?>" placeholder="社員番号" required>
       <div class="invalid-feedback">
         <?= $err['user_no'] ?>
       </div>
     </div>
     <div class="form-group">
       <input type="password" class="form-control rounded-pill <?php if (isset($err['password']))
-        echo 'is-invalid'; ?>"
-        name="password" placeholder="パスワード">
+        echo 'is-invalid'; ?>" name="password" placeholder="パスワード">
       <div class="invalid-feedback">
         <?= $err['password'] ?>
       </div>
     </div>
     <button type="submit" class="btn btn-info text-white rounded-pill px-5 my-4">ログイン</button>
-    <input type="hidden" name="CSRF_TOKEN" value="<?= $_SESSION['CSRF_TOKEN']?>">
+    <input type="hidden" name="CSRF_TOKEN" value="<?= $_SESSION['CSRF_TOKEN'] ?>">
   </form>
 
   <!-- Optional JavaScript; choose one of the two! -->

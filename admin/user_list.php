@@ -1,23 +1,23 @@
 <?php
- require_once(dirname(__FILE__).'/../config/config.php');
- require_once(dirname(__FILE__).'/../function.php');
- try{
- session_start();
+require_once(dirname(__FILE__) . '/../config/config.php');
+require_once(dirname(__FILE__) . '/../function.php');
+try {
+    session_start();
 
- if(!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1){
-    header('Location:/admin/login.php');
-    exit;
-   }
+    if (!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1) {
+        header('Location:/admin/login.php');
+        exit;
+    }
 
-   $pdo = connect_db();
+    $pdo = connect_db();
 
     $sql = "SELECT * from user where auth_type = '0'";
     $stmt = $pdo->query($sql);
     $user_list = $stmt->fetchAll();
-}catch(Exception $e){
+} catch (Exception $e) {
     header('Location:/error.php');
     exit;
-    }
+}
 ?>
 <!doctype html>
 <html lang="ja">
@@ -52,12 +52,17 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($user_list as $user):?>
-                <tr>
-                    <td scope="row"><?=$user['user_no']?></td>
-                    <td><a href="/admin/user_result.php?id=<?=$user['id']?>"><?= decryptWithFixedKey($user['name'])?></a></td>
-                    <!-- <td scope="row"><?php if($user['auth_type']==1) echo '管理者'?></td> -->
-                </tr>
+                <?php foreach ($user_list as $user): ?>
+                    <tr>
+                        <td scope="row">
+                            <?= $user['user_no'] ?>
+                        </td>
+                        <td><a href="/admin/user_result.php?id=<?= $user['id'] ?>">
+                                <?= decryptWithFixedKey($user['name']) ?>
+                            </a></td>
+                        <!-- <td scope="row"><?php if ($user['auth_type'] == 1)
+                            echo '管理者' ?></td> -->
+                        </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
