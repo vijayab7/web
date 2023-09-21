@@ -29,4 +29,55 @@ function format_time($timeString) {
         return "";
     }
 }
+
+function encryptWithFixedKey($plaintext) {
+    $key = 'ThisIsAStrongSecretKey123!'; // Replace with your actual secret key
+    $iv = 'ndomIV1234567890';   // Replace with your actual IV value
+
+    $cipher = "aes-256-cbc";
+    $ciphertext = openssl_encrypt($plaintext, $cipher, $key, OPENSSL_RAW_DATA, $iv);
+    return base64_encode($ciphertext);
+}
+
+
+function decryptWithFixedKey($ciphertext) {
+    $key = 'ThisIsAStrongSecretKey123!'; // Replace with your actual secret key
+    $iv = 'ndomIV1234567890';   // Replace with your actual IV value
+
+    $cipher = "aes-256-cbc";
+    $plaintext = openssl_decrypt(base64_decode($ciphertext), $cipher, $key, OPENSSL_RAW_DATA, $iv);
+    return $plaintext;
+}
+function h($orginal_str){
+    return htmlspecialchars($orginal_str,ENT_QUOTES,'UTF-8');
+
+}
+
+function set_token(){
+    $token =sha1(uniqid(mt_rand(),true));
+    $_SESSION['CSRF_TOKEN'] =$token;
+
+}
+function check_token(){
+    if(empty($_SESSION['CSRF_TOKEN']) || ($_SESSION['CSRF_TOKEN'] != $_POST['CSRF_TOKEN'])){
+        unset($pdo);
+        header('Location:/error.php');
+        exit;
+    }
+}
+
+function check_time_format($time){
+   if (preg_match('/^([01]?[0-9]|2[0-3]):([0-5][0-9])$/',$time)){
+    return true;
+   }else{
+    return false;
+   }
+}
+
+function redirect($path){
+    unset($pdo);
+    header('Location:'.$path);
+    exit;
+}
+
 ?>
