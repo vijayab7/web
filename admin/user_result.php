@@ -5,8 +5,7 @@ try {
     session_start();
 
     if (!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1) {
-        header('Location:/admin/login.php');
-        exit;
+        redirect('/admin/login.php');
     }
     $user_id = $_REQUEST['id'];
 
@@ -17,8 +16,6 @@ try {
     $pdo = connect_db();
 
     $err = array();
-
-    $target_date = date('Y-m-d');
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
@@ -44,7 +41,7 @@ try {
         }
         if (!$modal_break_time) {
             $err['modal_break_time'] = '休憩を入力してください。';
-        } elseif (check_time_format($modal_break_time)) {
+        } elseif (!check_time_format($modal_break_time)) {
             $err['modal_break_time'] = '休憩を正しく入力してください。';
         }
         if (mb_strlen($modal_comment, 'utf-8') > 100) {
@@ -123,9 +120,9 @@ try {
     $stmt->execute();
     $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 
+    $page_title = '日報登録';
 } catch (Exception $e) {
-    header('Location:/error.php');
-    exit;
+    redirect('/error.php');
 }
 
 ?>
@@ -133,26 +130,14 @@ try {
 <!doctype html>
 <html lang="ja">
 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
-
-    <!-- Original CSS-->
-    <link rel="stylesheet" href="/css/style.css">
-
-
-    <title>日報登録</title>
-</head>
+<?php include('../templates/head_tag.php') ?>
 
 <body class="text-center bg-primary">
-    <div>
-        <img class="mb-4" src="../img/logo.svg" width="80" height="80">
-    </div>
+
+<?php include('../templates/user_header.php') ?>
+
     <form class="border rounded bg-white form-time-table" action=user_result.php>
+    <input type="hidden" name="id" value="<?= $user_id ?>">
         <h1 class="h3 my-3">月別リスト</h1>
 
         <div class="float-left">
@@ -250,7 +235,7 @@ try {
                     <div class="modal-body">
                         <div class="container">
                             <div class="alert alert-primary" role="alert">
-                                <?= date('n', strtotime($target_date)) ?> /<span id="modal_day">
+                                <?= date('n', strtotime($yyyymm)) ?> /<span id="modal_day">
                                     <?= time_format_dw($target_date) ?>
                                 </span>
                             </div>
@@ -311,7 +296,7 @@ try {
                 </div>
             </div>
         </div>
-        <input type="hidden" id="target_date" name="target_date">
+        <input type="hidden" id="target_date" name="target_date" value= "<?= $target_date ?>">
     </form>
 
 

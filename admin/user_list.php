@@ -5,8 +5,7 @@ try {
     session_start();
 
     if (!isset($_SESSION['USER']) || $_SESSION['USER']['auth_type'] != 1) {
-        header('Location:/admin/login.php');
-        exit;
+        redirect('/admin/login.php');
     }
 
     $pdo = connect_db();
@@ -14,35 +13,30 @@ try {
     $sql = "SELECT * from user where auth_type = '0'";
     $stmt = $pdo->query($sql);
     $user_list = $stmt->fetchAll();
+    $page_title = '社員一覧';
+    // var_dump($user_list['id']);
+    // exit;
+
 } catch (Exception $e) {
-    header('Location:/error.php');
-    exit;
+    redirect('/error.php');
 }
 ?>
 <!doctype html>
 <html lang="ja">
 
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
-
-    <!-- Original CSS-->
-    <link rel="stylesheet" href="/css/style.css">
-
-
-    <title>社員一覧</title>
-</head>
+<?php include('../templates/head_tag.php') ?>
 
 <body class="text-center bg-primary">
-    <div>
-        <img class="mb-4" src="/img/logo.svg" width="80" height="80">
-    </div>
+
+<?php include('../templates/user_header.php') ?>
+
     <form class="border rounded bg-white form-user-list" action=index.php>
         <h1 class="h3 my-3">社員一覧</h1>
+        <div style="margin-left: 445px;">
+            <a href="/admin/user_logout.php"><button type="button"
+                    class="btn btn-secondary rounded-pill px-3">ログアウト</button></a>
+        </div>
+        <p> </p>
         <table class="table table-bordered">
             <thead>
                 <tr>

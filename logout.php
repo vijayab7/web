@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__) . '/function.php');
+
 try {
     session_start();
 
@@ -6,9 +8,9 @@ try {
 
     session_destroy();
 
-    header('Location:/login.php');
+    redirect('/login.php');
 } catch (Exception $e) {
-    header('Location:/error.php');
-    exit;
+    redirect('/error.php');
+    
 }
 ?>
