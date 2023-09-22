@@ -69,8 +69,7 @@ function check_token()
 {
     if (empty($_SESSION['CSRF_TOKEN']) || ($_SESSION['CSRF_TOKEN'] != $_POST['CSRF_TOKEN'])) {
         unset($pdo);
-        header('Location:/error.php');
-        exit;
+        redirect('/error.php');
     }
 }
 

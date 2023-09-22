@@ -5,8 +5,7 @@ try {
   session_start();
 
   if (isset($_SESSION['USER'])) {
-    header('Location:/index.php');
-    exit;
+    redirect('/index.php');
   }
   $err = array();
 
@@ -38,8 +37,7 @@ try {
       $user = $stmt->fetch();
       if ($user && password_verify($password, $user['password'])) {
         $_SESSION['USER'] = $user;
-        header('Location:/index.php');
-        exit;
+        redirect('/index.php');
 
       } else {
         $err['password'] = '認証に失敗しました。';
@@ -54,38 +52,23 @@ try {
 
     set_token();
   }
+  $page_title = 'ログイン';
 } catch (Exception $e) {
-  header('Location:/error.php');
-  exit;
+  redirect('/error.php');
 }
 ?>
 <!doctype html>
 <html lang="ja">
 
-<head>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
-
-  <!-- Original CSS-->
-  <link rel="stylesheet" href="/css/style.css">
-
-
-  <title>ログイン</title>
-</head>
+<?php include('templates/head_tag.php') ?>
 
 <body class="text-center bg-secondary">
-  <div>
-    <img class="mb-4" src="img/logo.svg" width="80" height="80">
-  </div>
+    <?php include('templates/header.php') ?>
   <form class="border rounded bg-white form-login" method="post">
     <h1 class="h3 my-3">Login</h1>
     <div class="form-group pt-3">
       <input type="text" class="form-control rounded-pill <?php if (isset($err['user_no']))
-        echo 'is-invalid'; ?>" name="user_no" value="<?= $user_no ?>" placeholder="社員番号" required>
+        echo 'is-invalid'; ?>" name="user_no" value="<?= $user_no ?>" placeholder="社員番号">
       <div class="invalid-feedback">
         <?= $err['user_no'] ?>
       </div>

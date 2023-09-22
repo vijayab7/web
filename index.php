@@ -17,28 +17,36 @@ try {
     $pdo = connect_db();
 
     $err = array();
-
-    $target_date = date('Y-m-d');
-
-    $sql = "SELECT * from work where user_id=:user_id AND date = :date LIMIT 1";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':user_id', (int) $session_user['id'], PDO::PARAM_INT);
-    $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
-    $stmt->execute();
-    $work = $stmt->fetch();
-    if (!$work) {
-        $modal_view_flg = TRUE;
+    $target_date = ""; 
+    if(!$target_date){
+        $target_date = date('Y-m-d');
     }
+     //$target_date = date('Y-m-d');
+
+      // $sql = "SELECT * from work where user_id=:user_id AND date = :date LIMIT 1";
+    // $stmt = $pdo->prepare($sql);
+    // $stmt->bindValue(':user_id', (int) $session_user['id'], PDO::PARAM_INT);
+    // $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
+    // $stmt->execute();
+    // $today = $stmt->fetch();
+    // if (!$today) {
+    //     $modal_view_flg = TRUE;
+    // }
+   
 
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $modal_view_flg = TRUE;
+        $target_date = $_POST['target_date'];
+        // var_dump($target_date);
+        // exit;
+        
 
-        if ($_POST['target_date']) {
-            $target_date = $_POST['target_date'];
-        } else {
-            $target_date = date('Y-m-d');
-        }
+        // if ($_POST['target_date']) {
+        //     $target_date = $_POST['target_date'];
+        // } else {
+        //     $target_date = date('Y-m-d');
+        // }
 
         $modal_start_time = $_POST['modal_start_time'];
         $modal_end_time = $_POST['modal_end_time'];
@@ -156,10 +164,20 @@ try {
     $stmt->execute();
     $work_list = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 
+    if($yyyymm == date('Y-m')){
+       $sql = "SELECT * from work where user_id=:user_id AND date = :date LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':user_id', (int) $session_user['id'], PDO::PARAM_INT);
+    $stmt->bindValue(':date', $target_date, PDO::PARAM_STR);
+    $stmt->execute();
+    $today = $stmt->fetch();
+    if (!$today) {
+        $modal_view_flg = TRUE;
+    }
+}
     $page_title = '日報登録';
 } catch (Exception $e) {
-    header('Location:/error.php');
-    exit;
+    redirect('/error.php');
 }
 
 ?>
@@ -220,7 +238,7 @@ try {
                             $break_time = date('H:i', strtotime($work['break_time']));
                         }
                         if ($work['comment']) {
-                            $comment = mb_strimwidth($work['comment'], 0, 40, '...');
+                            $comment = mb_strimwidth($work['comment'], 0, 20, '...');
                         }
                     }
                     ?>
@@ -265,7 +283,7 @@ try {
                     <div class="modal-body">
                         <div class="container">
                             <div class="alert alert-primary" role="alert">
-                                <?= date('n', strtotime($target_date)) ?> /<span id="modal_day">
+                                <?= date('n', strtotime($yyyymm)) ?> /<span id="modal_day">
                                     <?= time_format_dw($target_date) ?>
                                 </span>
                             </div>
@@ -316,7 +334,6 @@ try {
                                 <div class="invalid-feedback">
                                     <?= $err['modal_comment'] ?>
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -326,7 +343,7 @@ try {
                 </div>
             </div>
         </div>
-        <input type="hidden" id="target_date" name="target_date">
+        <input type="hidden" id="target_date" name="target_date" value= "<?= $target_date ?>">
     </form>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
@@ -357,6 +374,7 @@ try {
         $('#inputModal').on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget)
             var target_day = button.data('day')
+            //console.log(target_day)
 
             var day = button.closest('tr').children('th')[0].innerText
             var start_time = button.closest('tr').children('td')[0].innerText
