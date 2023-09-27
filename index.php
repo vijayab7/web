@@ -54,19 +54,19 @@ try {
         $modal_comment = $_POST['modal_comment'];
 
         if (!$modal_start_time) {
-            $err['modal_start_time'] = '出勤を入力してください。';
+            $err['modal_start_time'] = '出勤時間を入力してください。';
         } elseif (!check_time_format($modal_start_time)) {
-            $err['modal_start_time'] = '出勤を正しく入力してください。';
+            $err['modal_start_time'] = '出勤時間を正しく入力してください。';
         }
         if (!$modal_end_time) {
-            $err['modal_end_time'] = '退勤を入力してください。';
+            $err['modal_end_time'] = '退勤時間を入力してください。';
         } elseif (!check_time_format($modal_end_time)) {
-            $err['modal_end_time'] = '退勤を正しく入力してください。';
+            $err['modal_end_time'] = '退勤時間を正しく入力してください。';
         }
         if (!$modal_break_time) {
-            $err['modal_break_time'] = '休憩を入力してください。';
+            $err['modal_break_time'] = '休憩時間を入力してください。';
         } elseif (!check_time_format($modal_break_time)) {
-            $err['modal_break_time'] = '休憩を正しく入力してください。';
+            $err['modal_break_time'] = '休憩時間を正しく入力してください。';
         }
         if (mb_strlen($modal_comment, 'utf-8') > 100) {
             $err['modal_comment'] = '業務内容が長すぎます。';

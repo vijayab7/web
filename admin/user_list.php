@@ -8,14 +8,24 @@ try {
         redirect('/admin/login.php');
     }
 
+ 
+    // var_dump($user_list['id']);
+    // exit;
+
+    $num_per_page = 05;
+    if(isset($_GET["page"])){
+        $page =$_GET["page"];
+    }else{
+        $page =1;
+    }
+    $start_from = ($page-1)*05;
+
     $pdo = connect_db();
 
-    $sql = "SELECT * from user where auth_type = '0'";
+    $sql = "SELECT * from user limit $start_from, $num_per_page";
     $stmt = $pdo->query($sql);
     $user_list = $stmt->fetchAll();
     $page_title = '社員一覧';
-    // var_dump($user_list['id']);
-    // exit;
 
 } catch (Exception $e) {
     redirect('/error.php');
@@ -46,20 +56,57 @@ try {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($user_list as $user): ?>
+                <?php
+                foreach ($user_list as $user): ?> 
                     <tr>
                         <td scope="row">
-                            <?= $user['user_no'] ?>
+                        <?= $user['id'] ?>
                         </td>
                         <td><a href="/admin/user_result.php?id=<?= $user['id'] ?>">
-                                <?= decryptWithFixedKey($user['name']) ?>
+                                <?= ($user['name']) ?>
                             </a></td>
                         <!-- <td scope="row"><?php if ($user['auth_type'] == 1)
                             echo '管理者' ?></td> -->
                         </tr>
-                <?php endforeach; ?>
+                       
+                <?php
+            endforeach; ?>
             </tbody>
         </table>
+        <?php
+            $sql = "SELECT * FROM user ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $total_records = $stmt->rowCount();
+            $total_pages = ceil($total_records/$num_per_page);
+ 
+      
+// Assuming $total_pages and $page are already defined
+
+if ($total_pages > 1) {
+    // Display Previous button if not on the first page
+    if ($page > 1) {
+        echo "<a class='pagination' href='user_list.php?page=" . ($page - 1) . "'>&laquo; Previous</a>";
+    }
+
+    if ($page > 1) {
+        echo "<a class='pagination' href='user_list.php?page=" . ($page - 1) . "'>" . ($page - 1) . "</a>";
+    }
+
+    echo "<span class='current-page'>$page</span>";
+
+    if ($page < $total_pages) {
+        echo "<a class='pagination' href='user_list.php?page=" . ($page + 1) . "'>" . ($page + 1) . "</a>";
+    }
+
+    // Display Next button if not on the last page
+    if ($page < $total_pages) {
+        echo "<a class='pagination' href='user_list.php?page=" . ($page + 1) . "'>Next &raquo;</a>";
+    }
+}
+?>
+
+
     </form>
 
 
